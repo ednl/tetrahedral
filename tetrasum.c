@@ -55,7 +55,7 @@
 // Test two different algorithms for the innermost loop in each worker thread.
 // On an 11-year old iMac, binsearch is ~0.2 s faster than cbrt
 // when target=12345678, but it's hardly significant at 2.21 vs 2.38 s.
-#define BINSEARCH 0
+#define BINSEARCH 1
 
 // Pollock's conjecture: all positive whole numbers are sums
 // of at most 5 tetrahedral numbers (duplicates allowed).
@@ -144,12 +144,14 @@ static inline int tetraroot(const uint32_t x)
     return (int)(floor(cbrt(x) * DBL_CR6));
 }
 
+#if !BINSEARCH
 // Find tetrahedral index of x if x is tetrahedral, otherwise -1.
 static inline int tetraindex(const uint32_t x)
 {
     const int n = tetraroot(x);
     return n < TETRACOUNT && tetrahedral[n] == x ? n : -1;
 }
+#endif
 
 // Find index of largest tetrahedral number that can be part of a sum towards x.
 // Return: index n (0 <= n <= 2952) where Te(n) <= x and Te(n+1) > x
@@ -185,10 +187,6 @@ static void *loop(void *arg)
             const uint32_t partial2 = partial1 + tetrahedral[j];  // partial sum with 2 terms
             if (partial2 > target || partial2 < partial1)
                 break;  // impossible sum or overflow, proceed with next 1st term
-            // if (partial2 > target)
-            //     break;  // impossible sum or overflow, proceed with next 1st term
-            // if (partial2 < partial1)
-            //     break;  // impossible sum or overflow, proceed with next 1st term
             if (partial2 == target) {
                 ++sums[1];  // found a sum with 2 terms
                 dups += i == j;
@@ -202,10 +200,6 @@ static void *loop(void *arg)
                 const uint32_t partial3 = partial2 + tetrahedral[k];  // partial sum with 3 terms
                 if (partial3 > target || partial3 < partial2)
                     break;  // impossible sum or overflow, proceed with next 2nd term
-                // if (partial3 > target)
-                //     break;  // impossible sum or overflow, proceed with next 2nd term
-                // if (partial3 < partial2)
-                //     break;  // impossible sum or overflow, proceed with next 2nd term
                 if (partial3 == target) {
                     ++sums[2];  // found a sum with 3 terms
                     dups += i == j || j == k;
@@ -220,10 +214,6 @@ static void *loop(void *arg)
                     const uint32_t partial4 = partial3 + tetrahedral[l];  // partial sum with 4 terms
                     if (partial4 > target || partial4 < partial3)
                         break;  // impossible sum or overflow, proceed with next 3rd term
-                    // if (partial4 > target)
-                    //     break;  // impossible sum or overflow, proceed with next 3rd term
-                    // if (partial4 < partial3)
-                    //     break;  // impossible sum or overflow, proceed with next 3rd term
                     if (partial4 == target) {
                         ++sums[3];  // found a sum with 4 terms
                         dups += i == j || j == k || k == l;
